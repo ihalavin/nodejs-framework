@@ -1,11 +1,20 @@
 const http = require('http');
 const EventEmitter = require('events');
+const parseQueryParamsMiddleware = require('./Middleware/ParseQueryParametersMiddleware');
 
 module.exports = class Kernel {
+    port = 8000;
+    middlewares = [];
+
     constructor() {
         this.emitter = new EventEmitter();
         this.server = this._createServer();
-        this.middlewares = [];
+
+        this.registerMiddlewares();
+    }
+
+    registerMiddlewares() {
+        this.use(parseQueryParamsMiddleware('http://localhost:5000'));
     }
 
     use(middleware) {
@@ -16,18 +25,20 @@ module.exports = class Kernel {
         Object.keys(router.endpoints).forEach((path) => {
             const endpoint = router.endpoints[path];
             Object.keys(endpoint).forEach((method) => {
-                const handler = endpoint[method];
                 this.emitter.on(this._getRouteMask(path, method), (req, res) => {
-                    this.middlewares.forEach(middleware => middleware(req, res));
-
+                    const handler = endpoint[method];
                     handler(req, res);
                 });
             });
         });
     }
 
-    listen(port = 8000) {
-        this.server.listen(port, () => console.log(`Server started\nListening on port ${port}`));
+    listen(port) {
+        if (port) {
+            this.port = port;
+        }
+
+        this.server.listen(this.port, () => console.log(`Server started\nListening on port ${this.port}`));
     }
 
     _createServer() {
@@ -43,7 +54,8 @@ module.exports = class Kernel {
                     req.body = JSON.parse(body);
                 }
 
-                const emitted = this.emitter.emit(this._getRouteMask(req.url, req.method), req, res);
+                this.middlewares.forEach(middleware => middleware(req, res));
+                const emitted = this.emitter.emit(this._getRouteMask(req.pathname, req.method), req, res);
                 if (!emitted) {
                     res.statusCode = 404;
                     res.end('Not Found');
