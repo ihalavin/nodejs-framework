@@ -16,7 +16,7 @@ app.addRouter(UserRouter);
 
 const start = async () => {
     try {
-        await mongoose.connect("mongodb+srv://igpyspam:Ak7RKehLvr0rLW8N@cluster0.1jmf6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0");
+        await mongoose.connect("mongodb+srv://igpyspam:😝@cluster0.1jmf6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0");
 
         app.listen(PORT);
     } catch (err) {
